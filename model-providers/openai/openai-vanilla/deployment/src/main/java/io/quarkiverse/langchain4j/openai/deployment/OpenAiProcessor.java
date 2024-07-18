@@ -1,6 +1,5 @@
 package io.quarkiverse.langchain4j.openai.deployment;
 
-import static io.quarkiverse.langchain4j.deployment.LangChain4jDotNames.CHAT_MODEL;
 import static io.quarkiverse.langchain4j.deployment.LangChain4jDotNames.EMBEDDING_MODEL;
 import static io.quarkiverse.langchain4j.deployment.LangChain4jDotNames.IMAGE_MODEL;
 import static io.quarkiverse.langchain4j.deployment.LangChain4jDotNames.MODERATION_MODEL;
@@ -12,9 +11,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassType;
+import org.jboss.jandex.DotName;
 import org.jboss.jandex.ParameterizedType;
 import org.jboss.jandex.Type;
 
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.TokenCountEstimator;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import io.quarkiverse.langchain4j.ModelName;
 import io.quarkiverse.langchain4j.deployment.DotNames;
 import io.quarkiverse.langchain4j.deployment.items.ChatModelProviderCandidateBuildItem;
@@ -25,6 +28,7 @@ import io.quarkiverse.langchain4j.deployment.items.SelectedChatModelProviderBuil
 import io.quarkiverse.langchain4j.deployment.items.SelectedEmbeddingModelCandidateBuildItem;
 import io.quarkiverse.langchain4j.deployment.items.SelectedImageModelProviderBuildItem;
 import io.quarkiverse.langchain4j.deployment.items.SelectedModerationModelProviderBuildItem;
+import io.quarkiverse.langchain4j.openai.QuarkusOpenAiChatModel;
 import io.quarkiverse.langchain4j.openai.runtime.OpenAiRecorder;
 import io.quarkiverse.langchain4j.openai.runtime.config.LangChain4jOpenAiConfig;
 import io.quarkiverse.langchain4j.runtime.NamedConfigUtil;
@@ -37,7 +41,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
 
 public class OpenAiProcessor {
-
+    private static final DotName OPENAI_CHAT_MODEL = DotName.createSimple(OpenAiChatModel.class);
     private static final String FEATURE = "langchain4j-openai";
     private static final String PROVIDER = "openai";
 
@@ -81,7 +85,8 @@ public class OpenAiProcessor {
             if (PROVIDER.equals(selected.getProvider())) {
                 String configName = selected.getConfigName();
                 var builder = SyntheticBeanBuildItem
-                        .configure(CHAT_MODEL)
+                        .configure(OPENAI_CHAT_MODEL)
+                        .types(ChatLanguageModel.class, TokenCountEstimator.class, QuarkusOpenAiChatModel.class)
                         .setRuntimeInit()
                         .defaultBean()
                         .scope(ApplicationScoped.class)

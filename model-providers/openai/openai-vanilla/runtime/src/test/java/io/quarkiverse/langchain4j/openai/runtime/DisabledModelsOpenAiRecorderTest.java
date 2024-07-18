@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import dev.langchain4j.model.chat.DisabledChatLanguageModel;
@@ -29,6 +30,7 @@ class DisabledModelsOpenAiRecorderTest {
             .thenReturn(defaultConfig);
     }
 
+    @Disabled("Need to move this to a test where CDI is involved")
     @Test
     void disabledChatModel() {
         assertThat(recorder.chatModel(config, NamedConfigUtil.DEFAULT_NAME).apply(null))

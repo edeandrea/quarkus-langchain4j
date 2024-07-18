@@ -11,8 +11,6 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.util.TypeLiteral;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.DisabledChatLanguageModel;
 import dev.langchain4j.model.chat.DisabledStreamingChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
@@ -26,6 +24,8 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiModerationModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import io.quarkiverse.langchain4j.openai.QuarkusOpenAiChatModel;
+import io.quarkiverse.langchain4j.openai.QuarkusOpenAiChatModel.QuarkusOpenAiChatModelBuilder;
 import io.quarkiverse.langchain4j.openai.QuarkusOpenAiClient;
 import io.quarkiverse.langchain4j.openai.QuarkusOpenAiImageModel;
 import io.quarkiverse.langchain4j.openai.runtime.config.ChatModelConfig;
@@ -42,59 +42,55 @@ import io.smallrye.config.ConfigValidationException;
 @Recorder
 public class OpenAiRecorder {
 
-    private static final TypeLiteral<Instance<ChatModelListener>> CHAT_MODEL_LISTENER_TYPE_LITERAL = new TypeLiteral<>() {
+    static final TypeLiteral<Instance<ChatModelListener>> CHAT_MODEL_LISTENER_TYPE_LITERAL = new TypeLiteral<>() {
     };
 
     private static final String DUMMY_KEY = "dummy";
     private static final String OPENAI_BASE_URL = "https://api.openai.com/v1/";
 
-    public Function<SyntheticCreationalContext<ChatLanguageModel>, ChatLanguageModel> chatModel(
+    public Function<SyntheticCreationalContext<OpenAiChatModel>, OpenAiChatModel> chatModel(
             LangChain4jOpenAiConfig runtimeConfig, String configName) {
+
         LangChain4jOpenAiConfig.OpenAiConfig openAiConfig = correspondingOpenAiConfig(runtimeConfig, configName);
 
-        if (openAiConfig.enableIntegration()) {
-            String apiKey = openAiConfig.apiKey();
-            if (DUMMY_KEY.equals(apiKey) && OPENAI_BASE_URL.equals(openAiConfig.baseUrl())) {
-                throw new ConfigValidationException(createApiKeyConfigProblems(configName));
-            }
-            ChatModelConfig chatModelConfig = openAiConfig.chatModel();
-            var builder = OpenAiChatModel.builder()
-                    .baseUrl(openAiConfig.baseUrl())
-                    .apiKey(apiKey)
-                    .timeout(openAiConfig.timeout().orElse(Duration.ofSeconds(10)))
-                    .maxRetries(openAiConfig.maxRetries())
-                    .logRequests(chatModelConfig.logRequests().orElse(false))
-                    .logResponses(chatModelConfig.logResponses().orElse(false))
-                    .modelName(chatModelConfig.modelName())
-                    .temperature(chatModelConfig.temperature())
-                    .topP(chatModelConfig.topP())
-                    .presencePenalty(chatModelConfig.presencePenalty())
-                    .frequencyPenalty(chatModelConfig.frequencyPenalty())
-                    .responseFormat(chatModelConfig.responseFormat().orElse(null))
-                    .stop(chatModelConfig.stop().orElse(null));
-
-            openAiConfig.organizationId().ifPresent(builder::organizationId);
-
-            if (chatModelConfig.maxTokens().isPresent()) {
-                builder.maxTokens(chatModelConfig.maxTokens().get());
-            }
-
-            return new Function<>() {
-                @Override
-                public ChatLanguageModel apply(SyntheticCreationalContext<ChatLanguageModel> context) {
-                    builder.listeners(context.getInjectedReference(CHAT_MODEL_LISTENER_TYPE_LITERAL).stream()
-                            .collect(Collectors.toList()));
-                    return builder.build();
-                }
-            };
-        } else {
-            return new Function<>() {
-                @Override
-                public ChatLanguageModel apply(SyntheticCreationalContext<ChatLanguageModel> context) {
-                    return new DisabledChatLanguageModel();
-                }
-            };
+        String apiKey = openAiConfig.apiKey();
+        if (DUMMY_KEY.equals(apiKey) && OPENAI_BASE_URL.equals(openAiConfig.baseUrl())) {
+            throw new ConfigValidationException(createApiKeyConfigProblems(configName));
         }
+
+        ChatModelConfig chatModelConfig = openAiConfig.chatModel();
+        var builder = ((QuarkusOpenAiChatModelBuilder) OpenAiChatModel.builder());
+
+        builder
+                .enableIntegration(openAiConfig.enableIntegration())
+                .baseUrl(openAiConfig.baseUrl())
+                .apiKey(apiKey)
+                .timeout(openAiConfig.timeout().orElse(Duration.ofSeconds(10)))
+                .maxRetries(openAiConfig.maxRetries())
+                .logRequests(chatModelConfig.logRequests().orElse(false))
+                .logResponses(chatModelConfig.logResponses().orElse(false))
+                .modelName(chatModelConfig.modelName())
+                .temperature(chatModelConfig.temperature())
+                .topP(chatModelConfig.topP())
+                .presencePenalty(chatModelConfig.presencePenalty())
+                .frequencyPenalty(chatModelConfig.frequencyPenalty())
+                .responseFormat(chatModelConfig.responseFormat().orElse(null))
+                .stop(chatModelConfig.stop().orElse(null));
+
+        openAiConfig.organizationId().ifPresent(builder::organizationId);
+
+        if (chatModelConfig.maxTokens().isPresent()) {
+            builder.maxTokens(chatModelConfig.maxTokens().get());
+        }
+
+        return new Function<>() {
+            @Override
+            public OpenAiChatModel apply(SyntheticCreationalContext<OpenAiChatModel> context) {
+                builder.listeners(context.getInjectedReference(CHAT_MODEL_LISTENER_TYPE_LITERAL).stream()
+                        .collect(Collectors.toList()));
+                return builder.build();
+            }
+        };
     }
 
     public Supplier<StreamingChatLanguageModel> streamingChatModel(LangChain4jOpenAiConfig runtimeConfig, String configName) {
