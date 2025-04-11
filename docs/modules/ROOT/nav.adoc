@@ -41,6 +41,7 @@
 ** xref:reranking.adoc[Reranking]
 ** xref:web-search.adoc[Web search]
 ** xref:mcp.adoc[Model Context Protocol]
+** xref:docling.adoc[Docling]
 
 * Advanced topics
 ** xref:fault-tolerance.adoc[Fault Tolerance]

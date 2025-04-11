@@ -1,0 +1,45 @@
+= Docling
+
+include::./includes/attributes.adoc[]
+
+https://github.com/docling-project/docling[Docling] simplifies document processing, parsing diverse formats — including advanced PDF understanding — and providing seamless integrations with the gen AI ecosystem.
+
+== Using Docling
+
+To use Docling, add the following dependency into your project:
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>io.quarkiverse.langchain4j</groupId>
+    <artifactId>quarkus-langchain4j-docling</artifactId>
+    <version>{project-version}</version>
+</dependency>
+----
+
+== Dev Service
+
+There is a dev service (yay!). We'll tell you all about it later on.
+
+If the Dev Service starts a Docling container, it will expose the following configuration properties that you can use within your own configuration should you need to:
+
+[source,properties,subs=attributes+]
+----
+langchain4j-docling-dev-service.docling.host=host <1>
+langchain4j-docling-dev-service.docling.port=port <2>
+langchain4j-docling-dev-service.docling.api.endpoint=http://${langchain4j-docling-dev-service.docling.host}:${langchain4j-docling-dev-service.docling.port} <3>
+langchain4j-docling-dev-service.docling.api.doc=http://${langchain4j-docling-dev-service.docling.api.endpoint}/docs <4>
+langchain4j-docling-dev-service.docling.ui=http://${langchain4j-docling-dev-service.docling.api.endpoint}/ui <5>
+----
+
+. The host that the container is running on. Typically `localhost`, but it could be the name of the container network.
+. The port that the Docling container is running on.
+. The fully-qualified url (host + port) to the running Docling container.
+. The Documentation URL (i.e. Swagger UI)
+. The https://github.com/docling-project/docling-serve?tab=readme-ov-file#demonstration-ui[Docling UI]
+
+== Configuration
+
+Several configuration properties are available:
+
+include::includes/quarkus-langchain4j-docling.adoc[leveloffset=+1,opts=optional]
